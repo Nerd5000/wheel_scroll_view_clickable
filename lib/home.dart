@@ -29,7 +29,8 @@ class _CircularListPageState extends State<CircularListPage> {
     super.dispose();
   }
 
-  int indexOfItem=0;
+  int indexOfItem = 0;
+  double itemExtent = 120;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,40 +38,53 @@ class _CircularListPageState extends State<CircularListPage> {
       appBar: AppBar(
         title: Text("Circular List"),
       ),
-      body: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Result(index: indexOfItem), // the next page
+      body: Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          wheel.CircleListScrollView.useDelegate(
+            onSelectedItemChanged: (index) {
+              indexOfItem = index;
+            },
+            childDelegate: wheel.CircleListChildBuilderDelegate(
+              builder: (context, index) {
+                int currentIndex = 0;
+                try {
+                  currentIndex = _controller.selectedItem;
+                } catch (_) {}
+                final resizeFactor = (1 -
+                    (((currentIndex - index).abs() * 0.3).clamp(0.0, 1.0)));
+                return CircleListItem(
+                  resizeFactor: resizeFactor,
+                  character: characters[index],
+                );
+              },
+              childCount: characters.length,
             ),
-          );
-        },
-        child: wheel.CircleListScrollView.useDelegate(
-          onSelectedItemChanged: (index) {
-            indexOfItem = index;
-          },
-          childDelegate: wheel.CircleListChildBuilderDelegate(
-            builder: (context, index) {
-              int currentIndex = 0;
-              try {
-                currentIndex = _controller.selectedItem;
-              } catch (_) {}
-              final resizeFactor =
-                  (1 - (((currentIndex - index).abs() * 0.3).clamp(0.0, 1.0)));
-              return CircleListItem(
-                resizeFactor: resizeFactor,
-                character: characters[index],
+            physics: wheel.CircleFixedExtentScrollPhysics(),
+            controller: _controller,
+            axis: Axis.vertical,
+            itemExtent: itemExtent,
+            radius: MediaQuery.of(context).size.width * 0.8,
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      Result(index: indexOfItem), // the next page
+                ),
               );
             },
-            childCount: characters.length,
+            child: SizedBox(
+              height: itemExtent,
+              width: MediaQuery.of(context).size.width,
+              child: Container(
+                color: Colors.transparent,
+              ),
+            ),
           ),
-          physics: wheel.CircleFixedExtentScrollPhysics(),
-          controller: _controller,
-          axis: Axis.vertical,
-          itemExtent: 120,
-          radius: MediaQuery.of(context).size.width * 0.8,
-        ),
+        ],
       ),
     );
   }
@@ -86,25 +100,29 @@ class CircleListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Text(
-            character.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22 * resizeFactor,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Text(
+              character.title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22 * resizeFactor,
+              ),
             ),
           ),
-        ),
-        Container(
+          Container(
             width: 120 * resizeFactor,
             height: 120 * resizeFactor,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(60),
               color: Colors.white,
             ),
-      ]),
+          ),
+        ],
+      ),
     );
   }
 }
